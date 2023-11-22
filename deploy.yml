@@ -1,0 +1,45 @@
+---
+- hosts: all
+  # This playbook will run on all hosts in the inventory.
+
+  become: yes
+  # This enables privilege escalation, usually becoming root, which is necessary for most of the tasks in this playbook.
+
+  tasks:
+  # Below are the tasks that this playbook will perform.
+
+    - name: Ensure /usr/local/bin exists
+      file:
+        path: /usr/local/bin
+        state: directory
+      # This task ensures that the directory /usr/local/bin exists on the target hosts. If it doesn't, Ansible will create it.
+
+    - name: Copy notify_slack.sh script to /usr/local/bin
+      copy:
+        src: ./notify_slack.sh
+        dest: /usr/local/bin/notify_slack.sh
+        owner: root
+        group: root
+        mode: '0755'
+      # This task copies the notify_slack.sh script from the local machine to /usr/local/bin on the remote hosts. 
+      # It also sets the owner and group of the file to root, and the file permissions to 0755 (read and execute permissions for everyone, and write permission for the owner).
+
+    - name: Ensure PAM is configured to call our script
+      lineinfile:
+        path: /etc/pam.d/sshd
+        line: 'session optional pam_exec.so seteuid log=/tmp/pam_exec.log /usr/local/bin/notify_slack.sh'
+        create: yes
+      notify:
+        - Restart SSH
+      # This task adds a line to the /etc/pam.d/sshd file to configure PAM (Pluggable Authentication Modules) to execute the notify_slack.sh script.
+      # It logs output to /tmp/pam_exec.log. If /etc/pam.d/sshd doesn't exist, it will be created.
+      # If this task makes changes, it triggers the "Restart SSH" handler to restart the SSH service.
+
+  handlers:
+    - name: Restart SSH
+      systemd:
+        name: ssh
+        state: restarted
+      # This is a handler named "Restart SSH". It uses the systemd module to restart the SSH service.
+      # Handlers are tasks that run only when notified by another task. In this case, it runs if the PAM configuration is changed.
+
