@@ -1,1 +1,1 @@
-# ssh-login-slack-alert
+This script is designed to send a notification to a specified Slack channel when a user logs into the system via SSH, excluding logins from the local machine (localhost). It uses environment variables provided by PAM (Pluggable Authentication Module), specifically PAM_TYPE, PAM_USER, and PAM_RHOST, to gather information about the SSH session.
